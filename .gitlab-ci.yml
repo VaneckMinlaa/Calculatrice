@@ -127,38 +127,51 @@ test:
     - if: $CI_COMMIT_BRANCH
 
 # ========================================
-# Stage 3: Deploy (Simple)
+# Stage 3: Deploy (Sans SSH - Via Webhook ou API)
 # ========================================
 deploy:
   stage: deploy
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache openssh-client rsync bash
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts || true
+  image: curlimages/curl:latest
   script:
-    - echo "Deploying application..."
+    - echo "Deploying application (without SSH)..."
     - |
-      cd calculatrice
-      if [ -f "scripts/deploy-dev.sh" ]; then
-        chmod +x scripts/deploy-dev.sh
-        ./scripts/deploy-dev.sh
+      # Option 1: Déploiement via Webhook (si serveur configuré)
+      if [ ! -z "$DEPLOY_WEBHOOK_URL" ]; then
+        echo "Deploying via webhook..."
+        curl -X POST "$DEPLOY_WEBHOOK_URL" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"pipeline_id\": \"$CI_PIPELINE_ID\",
+            \"commit\": \"$CI_COMMIT_SHA\",
+            \"branch\": \"$CI_COMMIT_BRANCH\",
+            \"artifacts_url\": \"$CI_JOB_URL/artifacts/download\",
+            \"project_url\": \"$CI_PROJECT_URL\"
+          }" || echo "Webhook call failed, but continuing..."
+        echo "Webhook sent successfully!"
       else
-        echo "Deployment script not found, using simple deployment..."
-        ssh $DEPLOY_USER@$DEPLOY_HOST "mkdir -p $DEPLOY_PATH"
-        rsync -avz --progress \
-          Calaculatrice-eureka-service/target/*.jar \
-          calculatrice-gateway/target/*.jar \
-          microservices/*/target/*.jar \
-          $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/
-        echo "Deployment completed!"
+        echo "DEPLOY_WEBHOOK_URL not set, skipping webhook deployment"
+        echo ""
+        echo "=========================================="
+        echo "Artifacts disponibles pour téléchargement:"
+        echo "=========================================="
+        echo "Pipeline ID: $CI_PIPELINE_ID"
+        echo "Job URL: $CI_JOB_URL"
+        echo "Artifacts URL: $CI_JOB_URL/artifacts/download"
+        echo ""
+        echo "Pour télécharger les artifacts:"
+        echo "1. Aller dans CI/CD > Pipelines > $CI_PIPELINE_ID"
+        echo "2. Cliquer sur le job 'build'"
+        echo "3. Cliquer sur 'Download' pour télécharger les fichiers JAR"
+        echo ""
+        echo "Pour activer le déploiement automatique via webhook:"
+        echo "1. Configurer un webhook sur votre serveur"
+        echo "2. Ajouter la variable DEPLOY_WEBHOOK_URL dans GitLab (Settings > CI/CD > Variables)"
+        echo "   Exemple: http://votre-serveur:8080/webhook/deploy"
+        echo "=========================================="
       fi
   environment:
     name: production
-    url: http://$DEPLOY_HOST:8080
+    url: http://${DEPLOY_SERVER_HOST:-localhost}:8080
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
