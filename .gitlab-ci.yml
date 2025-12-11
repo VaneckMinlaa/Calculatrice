@@ -101,7 +101,12 @@ test:
     - echo "Running tests..."
     - pwd
     - ls -la
-    - test -d calculatrice || (echo "ERROR: calculatrice directory not found!" && ls -la && exit 1)
+    - |
+      if [ ! -d "calculatrice" ]; then
+        echo "ERROR: calculatrice directory not found!"
+        ls -la
+        exit 1
+      fi
     - cd calculatrice
     - pwd
     - mvn $MAVEN_CLI_OPTS test
