@@ -99,24 +99,11 @@ test:
       EOF
   script:
     - echo "Running tests..."
-    - echo "Current directory: $(pwd)"
-    - echo "Listing files in root:"
+    - pwd
     - ls -la
-    - echo "Checking for calculatrice directory..."
-    - |
-      if [ ! -d "calculatrice" ]; then
-        echo "ERROR: calculatrice directory not found!"
-        echo "Available files and directories:"
-        ls -la
-        echo "Checking Git status..."
-        git ls-files | head -20 || echo "Git not available"
-        exit 1
-      fi
+    - test -d calculatrice || (echo "ERROR: calculatrice directory not found!" && ls -la && exit 1)
     - cd calculatrice
-    - echo "Changed to calculatrice directory: $(pwd)"
-    - echo "Listing files in calculatrice:"
-    - ls -la | head -20
-    - echo "Running Maven tests..."
+    - pwd
     - mvn $MAVEN_CLI_OPTS test
   artifacts:
     when: always
