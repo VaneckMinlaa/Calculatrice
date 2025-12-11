@@ -80,7 +80,6 @@ test:
         sleep 2
       done
     - echo "Initializing database schema..."
-    - cd calculatrice
     - |
       PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB <<EOF
       CREATE TABLE IF NOT EXISTS calculation_history (
@@ -100,7 +99,24 @@ test:
       EOF
   script:
     - echo "Running tests..."
+    - echo "Current directory: $(pwd)"
+    - echo "Listing files in root:"
+    - ls -la
+    - echo "Checking for calculatrice directory..."
+    - |
+      if [ ! -d "calculatrice" ]; then
+        echo "ERROR: calculatrice directory not found!"
+        echo "Available files and directories:"
+        ls -la
+        echo "Checking Git status..."
+        git ls-files | head -20 || echo "Git not available"
+        exit 1
+      fi
     - cd calculatrice
+    - echo "Changed to calculatrice directory: $(pwd)"
+    - echo "Listing files in calculatrice:"
+    - ls -la | head -20
+    - echo "Running Maven tests..."
     - mvn $MAVEN_CLI_OPTS test
   artifacts:
     when: always
