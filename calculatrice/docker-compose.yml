@@ -1,0 +1,230 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: calculatrice-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-calculatrice_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - calculatrice-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Eureka Service Discovery Server
+  # ========================================
+  eureka-server:
+    build:
+      context: ./Calaculatrice-eureka-service
+      dockerfile: Dockerfile
+    container_name: calculatrice-eureka
+    restart: unless-stopped
+    ports:
+      - "${EUREKA_PORT:-8761}:8761"
+    environment:
+      - SPRING_APPLICATION_NAME=eureka-server
+      - EUREKA_INSTANCE_HOSTNAME=eureka-server
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    networks:
+      - calculatrice-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ========================================
+  # API Gateway
+  # ========================================
+  calculatrice-gateway:
+    build:
+      context: ./calculatrice-gateway
+      dockerfile: Dockerfile
+    container_name: calculatrice-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      - SPRING_APPLICATION_NAME=calculatrice-gateway
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ========================================
+  # Addition Microservice
+  # ========================================
+  addition-service:
+    build:
+      context: ./microservices/addition-service
+      dockerfile: Dockerfile
+    container_name: addition-service
+    restart: unless-stopped
+    ports:
+      - "${ADDITION_PORT:-8081}:8081"
+    environment:
+      - SPRING_APPLICATION_NAME=addition-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+
+  # ========================================
+  # Subtraction Microservice
+  # ========================================
+  subtraction-service:
+    build:
+      context: ./microservices/subtraction-service
+      dockerfile: Dockerfile
+    container_name: subtraction-service
+    restart: unless-stopped
+    ports:
+      - "${SUBTRACTION_PORT:-8082}:8082"
+    environment:
+      - SPRING_APPLICATION_NAME=subtraction-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+
+  # ========================================
+  # Multiplication Microservice
+  # ========================================
+  multiplication-service:
+    build:
+      context: ./microservices/multiplication-service
+      dockerfile: Dockerfile
+    container_name: multiplication-service
+    restart: unless-stopped
+    ports:
+      - "${MULTIPLICATION_PORT:-8083}:8083"
+    environment:
+      - SPRING_APPLICATION_NAME=multiplication-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+
+  # ========================================
+  # Division Microservice
+  # ========================================
+  division-service:
+    build:
+      context: ./microservices/division-service
+      dockerfile: Dockerfile
+    container_name: division-service
+    restart: unless-stopped
+    ports:
+      - "${DIVISION_PORT:-8084}:8084"
+    environment:
+      - SPRING_APPLICATION_NAME=division-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+
+  # ========================================
+  # Modulo Microservice
+  # ========================================
+  modulo-service:
+    build:
+      context: ./microservices/modulo-service
+      dockerfile: Dockerfile
+    container_name: modulo-service
+    restart: unless-stopped
+    ports:
+      - "${MODULO_PORT:-8085}:8085"
+    environment:
+      - SPRING_APPLICATION_NAME=modulo-service
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_SERVER_URL:-http://eureka-server:8761/eureka/}
+      - SPRING_DATASOURCE_URL=${DATABASE_URL:-jdbc:postgresql://postgres-db:5432/calculatrice_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - JAVA_OPTS=${JAVA_OPTS:--Xmx512m -Xms256m}
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - calculatrice-network
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  calculatrice-network:
+    driver: bridge
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  postgres-data:
+    driver: local
