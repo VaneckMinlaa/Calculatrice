@@ -68,11 +68,36 @@ test:
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "root"
   before_script:
-    - echo "Waiting for PostgreSQL..."
-    - apt-get update && apt-get install -y postgresql-client
-    - until PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -c '\q'; do sleep 1; done
+    - echo "Waiting for PostgreSQL to be ready..."
+    - apt-get update -qq && apt-get install -y -qq postgresql-client
+    - |
+      for i in {1..30}; do
+        if PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -c '\q' 2>/dev/null; then
+          echo "PostgreSQL is ready!"
+          break
+        fi
+        echo "Waiting for PostgreSQL... ($i/30)"
+        sleep 2
+      done
+    - echo "Initializing database schema..."
     - cd calculatrice
-    - PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -f init-db.sql || true
+    - |
+      PGPASSWORD=$POSTGRES_PASSWORD psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB <<EOF
+      CREATE TABLE IF NOT EXISTS calculation_history (
+          id BIGSERIAL PRIMARY KEY,
+          operation_type VARCHAR(50) NOT NULL,
+          operand1 DECIMAL(20, 10) NOT NULL,
+          operand2 DECIMAL(20, 10) NOT NULL,
+          result DECIMAL(20, 10) NOT NULL,
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          service_name VARCHAR(100),
+          user_id VARCHAR(100),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_operation_type ON calculation_history(operation_type);
+      CREATE INDEX IF NOT EXISTS idx_timestamp ON calculation_history(timestamp);
+      CREATE INDEX IF NOT EXISTS idx_user_id ON calculation_history(user_id);
+      EOF
   script:
     - echo "Running tests..."
     - cd calculatrice
