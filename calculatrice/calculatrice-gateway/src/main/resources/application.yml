@@ -1,0 +1,87 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: calculatrice-gateway
+  main:
+    web-application-type: reactive
+  
+  # PostgreSQL Database Configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/calculatrice_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  
+  cloud:
+    gateway:
+      routes:
+        - id: addition-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/calculatrice/add
+          filters:
+            - RewritePath=/api/calculatrice/(.*), /api/$1
+
+        - id: subtraction-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/calculatrice/subtract
+          filters:
+            - RewritePath=/api/calculatrice/(.*), /api/$1
+
+        - id: multiplication-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/calculatrice/multiply
+          filters:
+            - RewritePath=/api/calculatrice/(.*), /api/$1
+
+        - id: division-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/calculatrice/divide
+          filters:
+            - RewritePath=/api/calculatrice/(.*), /api/$1
+
+        - id: modulo-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/calculatrice/modulo
+          filters:
+            - RewritePath=/api/calculatrice/(.*), /api/$1
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    enabled: ${EUREKA_CLIENT_ENABLED:false}
+    register-with-eureka: ${EUREKA_CLIENT_REGISTER:false}
+    fetch-registry: ${EUREKA_CLIENT_FETCH:false}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+# Actuator Configuration for Health Checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -1,0 +1,65 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot - API Gateway",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/calculatrice-gateway",
+            "mainClass": "com.example.calculatrice.gateway.CalculatriceGatewayApplication",
+            "projectName": "calculatrice-gateway",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot - Addition Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/microservices/addition-service",
+            "mainClass": "com.example.calculatrice.addition.AdditionServiceApplication",
+            "projectName": "addition-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot - Subtraction Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/microservices/subtraction-service",
+            "mainClass": "com.example.calculatrice.subtraction.SubtractionServiceApplication",
+            "projectName": "subtraction-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot - Multiplication Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/microservices/multiplication-service",
+            "mainClass": "com.example.calculatrice.multiplication.MultiplicationServiceApplication",
+            "projectName": "multiplication-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot - Division Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/microservices/division-service",
+            "mainClass": "com.example.calculatrice.division.DivisionServiceApplication",
+            "projectName": "division-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot - Modulo Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/calculatrice/microservices/modulo-service",
+            "mainClass": "com.example.calculatrice.modulo.ModuloServiceApplication",
+            "projectName": "modulo-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

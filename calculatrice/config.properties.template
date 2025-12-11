@@ -1,0 +1,42 @@
+# ========================================
+# TEMPLATE DE CONFIGURATION SÉCURISÉ
+# ========================================
+# INSTRUCTIONS:
+# 1. Copiez ce fichier vers: config.properties
+# 2. Remplissez avec vos credentials réels
+# 3. config.properties sera ignoré par Git
+# ========================================
+
+# Configuration PostgreSQL (Mode SANS DOCKER)
+postgres.db=calculatrice_db
+postgres.user=postgres
+postgres.password=root
+postgres.host=localhost
+postgres.port=5432
+
+# URL de connexion
+database.url=jdbc:postgresql://localhost:5432/calculatrice_db
+
+# Configuration Eureka
+eureka.host=localhost
+eureka.port=8761
+eureka.url=http://localhost:8761/eureka/
+
+# Ports des microservices
+service.gateway.port=8080
+service.addition.port=8081
+service.subtraction.port=8082
+service.multiplication.port=8083
+service.division.port=8084
+service.modulo.port=8085
+
+# Options JVM
+java.opts=-Xmx512m -Xms256m
+
+# Chemin PostgreSQL (ajustez selon votre installation)
+postgres.bin.path=C:\\Program Files\\PostgreSQL\\15\\bin
+postgres.data.path=C:\\Program Files\\PostgreSQL\\15\\data
+
+# Mode de démarrage
+environment=dev
+
